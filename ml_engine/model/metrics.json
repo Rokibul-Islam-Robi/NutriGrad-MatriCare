@@ -1,0 +1,64 @@
+{
+  "model_type": "RandomForestClassifier with RobustScaler",
+  "n_features": 14,
+  "features": [
+    "Age",
+    "BMI",
+    "Hemoglobin",
+    "BloodPressure",
+    "SugarLevel",
+    "ProteinIntake",
+    "BMI_Category",
+    "Anemia_Severity",
+    "BP_Stage",
+    "Est_MAP",
+    "Est_PulsePressure",
+    "Glycemic_Category",
+    "Protein_Deficit_Score",
+    "Maternal_Age_Risk"
+  ],
+  "feature_importances": {
+    "SugarLevel": 0.1376,
+    "Hemoglobin": 0.1207,
+    "BMI": 0.1182,
+    "ProteinIntake": 0.1164,
+    "Est_MAP": 0.0991,
+    "Est_PulsePressure": 0.0979,
+    "BloodPressure": 0.0826,
+    "Age": 0.0551,
+    "Glycemic_Category": 0.0398,
+    "BMI_Category": 0.0335,
+    "Protein_Deficit_Score": 0.0329,
+    "Anemia_Severity": 0.0296,
+    "BP_Stage": 0.0273,
+    "Maternal_Age_Risk": 0.0095
+  },
+  "cv_accuracy_mean": 0.7899,
+  "cv_f1_mean": 0.7884,
+  "test_accuracy": 0.7167,
+  "test_f1_macro": 0.6991,
+  "test_precision_macro": 0.7084,
+  "test_recall_macro": 0.6938,
+  "confusion_matrix": [
+    [
+      22,
+      4,
+      0
+    ],
+    [
+      7,
+      8,
+      2
+    ],
+    [
+      0,
+      4,
+      13
+    ]
+  ],
+  "classes": [
+    "Low Risk",
+    "Mid Risk",
+    "High Risk"
+  ]
+}

@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL Database Service
+  postgres_db:
+    image: postgres:15-alpine
+    container_name: nutrigrad_matricare_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-nutrigrad_matricare_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - nutrigrad_matricare_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. FastAPI Machine Learning Inference Microservice
+  ml_engine:
+    build:
+      context: ./ml_engine
+      dockerfile: Dockerfile
+    container_name: nutrigrad_matricare_ml_engine
+    restart: always
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./ml_engine:/app
+      - ./dataset:/app/dataset
+    networks:
+      - nutrigrad_matricare_network
+    environment:
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # 3. Django REST Framework Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nutrigrad_matricare_backend
+    restart: always
+    command: >
+      sh -c "python manage.py makemigrations authentication patients &&
+             python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-nutrigrad-matricare-enterprise-secret-key-prod}
+      - DEBUG=${DEBUG:-True}
+      - DB_ENGINE=postgres
+      - POSTGRES_DB=${POSTGRES_DB:-nutrigrad_matricare_db}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_HOST=postgres_db
+      - POSTGRES_PORT=5432
+      - ML_ENGINE_URL=http://ml_engine:8001
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+      ml_engine:
+        condition: service_healthy
+    networks:
+      - nutrigrad_matricare_network
+
+  # 4. React Tailwind CSS Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nutrigrad_matricare_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_BACKEND_URL=http://localhost:8000
+      - VITE_ML_ENGINE_URL=http://localhost:8001
+    depends_on:
+      - backend
+    networks:
+      - nutrigrad_matricare_network
+
+networks:
+  nutrigrad_matricare_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
